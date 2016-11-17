@@ -33,11 +33,11 @@ using FaceID = uint16_t;
 class FontFace {
 public:
     struct Descriptor {
-        InputSource source;
+        std::shared_ptr<InputSource> source;
         int faceIndex;
         float scale;
 
-        Descriptor(InputSource source, int faceIndex = 0, float scale = 1)
+        Descriptor(std::shared_ptr<InputSource>& source, int faceIndex = 0, float scale = 1)
             : source(source),
               faceIndex(faceIndex),
               scale(scale) {}
@@ -49,7 +49,7 @@ public:
         float baseSize;
 
         Key(const Descriptor& descriptor, float baseSize)
-            : uri(descriptor.source.uri()),
+            : uri(descriptor.source->uri()),
               faceIndex(descriptor.faceIndex),
               baseSize(baseSize * descriptor.scale) {}
 

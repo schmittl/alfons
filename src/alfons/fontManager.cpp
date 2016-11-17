@@ -16,7 +16,7 @@
 
 namespace alfons {
 
-std::shared_ptr<Font> FontManager::addFont(std::string _name, InputSource _source,
+std::shared_ptr<Font> FontManager::addFont(std::string _name, std::shared_ptr<InputSource>& _source,
                                            Font::Properties _properties) {
 
     auto key = make_pair(_name, _properties);

@@ -17,12 +17,16 @@
 
 namespace alfons {
 
-using LoadSourceHandle = std::function<std::vector<char>()>;
+using LoadSourceHandle = std::function<unsigned char*(size_t*)>;
 
 class InputSource {
 public:
 
-    InputSource() {}
+    InputSource(const InputSource& _other) = delete;
+
+    InputSource& operator=(const InputSource& _other) = delete;
+
+    InputSource() = default;
 
     InputSource(const std::string& _uri)
         : m_uri(_uri) {}
@@ -30,41 +34,45 @@ public:
     InputSource(LoadSourceHandle _loadSource)
         : m_loadSource(_loadSource) {}
 
-    InputSource(std::vector<char> _data)
-        : m_buffer(std::make_shared<std::vector<char>>(std::move(_data))) {}
+    InputSource(unsigned char* _data, size_t _size)
+        : m_buffer(_data), m_bufferSize(_size) {}
 
-    InputSource(const char* data, size_t len)
-        : m_buffer(std::make_shared<std::vector<char>>(data, data + len)) {}
+    ~InputSource() {
+        if (m_buffer && m_bufferSize > 0) {
+            free(m_buffer);
+        }
+    }
 
     const std::string& uri() const { return m_uri; }
-    const auto buffer() const { return m_buffer; }
+    const unsigned char* buffer() const { return m_buffer; }
+    size_t bufferSize() const { return m_bufferSize; }
 
     bool isUri() const { return !m_uri.empty(); }
 
-    bool hasSourceCallback() { return bool(m_loadSource); }
+    bool hasSourceHandler() { return bool(m_loadSource); }
 
     bool resolveSource() {
         if (m_buffer) {
             return true;
         }
 
-        auto buffer = m_loadSource();
+        m_buffer = m_loadSource(&m_bufferSize);
 
-        if (buffer.size() == 0) {
+        if (m_bufferSize == 0) {
             return false;
         }
 
-        m_buffer = std::make_shared<std::vector<char>>(std::move(buffer));
         return true;
     }
 
     bool isValid() {
-        return (m_buffer && !m_buffer->empty()) || !m_uri.empty() || bool(m_loadSource);
+        return (m_buffer && m_bufferSize > 0) || !m_uri.empty() || bool(m_loadSource);
     }
 
 protected:
     std::string m_uri = "";
-    std::shared_ptr<std::vector<char>> m_buffer;
+    unsigned char* m_buffer = nullptr;
+    size_t m_bufferSize = 0;
     LoadSourceHandle m_loadSource = nullptr;
 };
 }

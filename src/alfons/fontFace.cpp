@@ -87,35 +87,35 @@ bool FontFace::load() {
     if (m_loaded) {  return true; }
     if (m_invalid) { return false; }
 
-    if (!m_descriptor.source.isValid()) {
+    if (!m_descriptor.source->isValid()) {
         m_invalid = true;
         return false;
     }
 
     FT_Error error;
 
-    if (m_descriptor.source.hasSourceCallback()) {
-        if (!m_descriptor.source.resolveSource()) {
+    if (m_descriptor.source->hasSourceHandler()) {
+        if (!m_descriptor.source->resolveSource()) {
             LOGE("Invalid data loaded by source callback");
             m_invalid = true;
             return false;
         }
     }
 
-    if (m_descriptor.source.isUri()) {
+    if (m_descriptor.source->isUri()) {
         error = FT_New_Face(m_ft.getLib(),
-                            m_descriptor.source.uri().c_str(),
+                            m_descriptor.source->uri().c_str(),
                             m_descriptor.faceIndex, &m_ftFace);
         if (error) {
-            LOGE("Missing font: error: %d %s", error, m_descriptor.source.uri());
+            LOGE("Missing font: error: %d %s", error, m_descriptor.source->uri());
             m_invalid = true;
             return false;
         }
 
     } else {
-        auto& buffer = m_descriptor.source.buffer();
-        error = FT_New_Memory_Face(m_ft.getLib(), reinterpret_cast<const FT_Byte*>(buffer->data()),
-                                   buffer->size(), m_descriptor.faceIndex, &m_ftFace);
+        const FT_Byte* buffer = reinterpret_cast<const FT_Byte*>(m_descriptor.source->buffer());
+        size_t bufferSize = m_descriptor.source->bufferSize();
+        error = FT_New_Memory_Face(m_ft.getLib(), buffer, bufferSize, m_descriptor.faceIndex, &m_ftFace);
         if (error) {
             LOGE("Coul not create font: error: %d", error);
             m_invalid = true;
